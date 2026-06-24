@@ -292,7 +292,7 @@
             height: 70px;
         }
 
-        /* Absolute layer wrapper for smooth sliding calculations */
+        /* Absolute overlay area across grid dimensions */
         .tile-container {
             position: absolute;
             top: 10px;
@@ -313,14 +313,9 @@
             align-items: center;
             font-size: 28px;
             font-weight: bold;
-            /* Smooth sliding handling */
-            transition: transform 0.12s ease-in-out; 
-            animation: appear 0.15s ease-in-out;
-        }
-
-        /* Scale animation trigger when two tiles merge */
-        .tile-merged {
-            animation: pop 0.18s ease-in-out;
+            /* Precise slide handling */
+            transition: transform 0.1s ease-in-out; 
+            animation: appear 0.12s ease-in-out;
         }
 
         .tile-2 { background: #eee4da; color: #776e65; }
@@ -362,14 +357,8 @@
         }
 
         @keyframes appear {
-            0% { opacity: 0; transform: scale(0); }
+            0% { opacity: 0; transform: scale(0.5); }
             100% { opacity: 1; transform: scale(1); }
-        }
-
-        @keyframes pop {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(1); }
         }
     </style>
 </head>
@@ -426,7 +415,7 @@
                 <button id="retry-btn">Try Again</button>
             </div>
 
-            <div class="grid-container" id="grid-container">
+            <div class="grid-container">
                 <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
                 <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
                 <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
@@ -463,7 +452,7 @@
                 themeToggle.textContent = document.body.classList.contains('dark-theme') ? '☀️ Light' : '🌙 Dark';
             });
 
-            // --- 2048 Core Shifting Animation Engine ---
+            // --- 2048 Stable Engine ---
             const scoreDisplay = document.getElementById('score');
             const restartBtn = document.getElementById('restart-btn');
             const retryBtn = document.getElementById('retry-btn');
@@ -473,16 +462,11 @@
             let board = Array(16).fill(0);
             let score = 0;
 
-            // Tracking object references helps preserve slide paths instead of wiping elements instantly
-            let visualTiles = Array(16).fill(null);
-
             function startGame() {
                 gameOverScreen.classList.add('hidden');
                 board = Array(16).fill(0);
                 score = 0;
                 updateScore(0);
-                tileContainer.innerHTML = '';
-                visualTiles = Array(16).fill(null);
                 generateTile();
                 generateTile();
                 renderBoard();
@@ -495,5 +479,141 @@
                 board[randomCell] = Math.random() < 0.9 ? 2 : 4;
             }
 
-            // Math to translate board indexes into neat absolute pixels
-            function getTilePosition
+            function getTilePosition(index) {
+                const row = Math.floor(index / 4);
+                const col = index % 4;
+                const sizeWithGap = 70 + 10; // 70px tile + 10px spacing
+                return { x: col * sizeWithGap, y: row * sizeWithGap };
+            }
+
+            function renderBoard() {
+                // Fetch elements currently existing in the container layer
+                const currentTiles = Array.from(tileContainer.children);
+                
+                // Track assignments to avoid double binding elements
+                const usedTiles = new Set();
+
+                board.forEach((value, index) => {
+                    if (value === 0) return;
+                    const pos = getTilePosition(index);
+
+                    // Match an existing HTML block by numerical value to apply the transform transition smoothly
+                    let tileEl = currentTiles.find(el => el.dataset.val == value && !usedTiles.has(el));
+
+                    if (tileEl) {
+                        usedTiles.add(tileEl);
+                    } else {
+                        // Create asset dynamically if none match perfectly
+                        tileEl = document.createElement('div');
+                        tileEl.innerText = value;
+                        tileEl.dataset.val = value;
+                        tileContainer.appendChild(tileEl);
+                    }
+
+                    // Strict presentation updates applied instantly on data cycles
+                    tileEl.className = `tile tile-${value}`;
+                    tileEl.style.transform = `translate(${pos.x}px, ${pos.y}px)`;
+                });
+
+                // Clear missing elements out of DOM structure safely
+                currentTiles.forEach(el => {
+                    if (!usedTiles.has(el)) {
+                        el.remove();
+                    }
+                });
+            }
+
+            function updateScore(amount) {
+                score += amount;
+                scoreDisplay.innerText = score;
+            }
+
+            function slideRow(row) {
+                let arr = row.filter(val => val);
+                let missing = 4 - arr.length;
+                return arr.concat(Array(missing).fill(0));
+            }
+
+            function combineRow(row) {
+                for (let i = 0; i < 3; i++) {
+                    if (row[i] === row[i + 1] && row[i] !== 0) {
+                        row[i] *= 2;
+                        updateScore(row[i]);
+                        row[i + 1] = 0;
+                    }
+                }
+                return row;
+            }
+
+            function moveLeft() {
+                let moved = false;
+                for (let i = 0; i < 16; i += 4) {
+                    let row = [board[i], board[i+1], board[i+2], board[i+3]];
+                    let slid = slideRow(row);
+                    let combined = combineRow(slid);
+                    let finalRow = slideRow(combined);
+                    
+                    if (JSON.stringify(row) !== JSON.stringify(finalRow)) moved = true;
+
+                    for (let j = 0; j < 4; j++) {
+                        board[i + j] = finalRow[j];
+                    }
+                }
+                return moved;
+            }
+
+            function rotateBoard() {
+                let newBoard = Array(16).fill(0);
+                for (let r = 0; r < 4; r++) {
+                    for (let c = 0; c < 4; c++) {
+                        newBoard[c * 4 + (3 - r)] = board[r * 4 + c];
+                    }
+                }
+                board = newBoard;
+            }
+
+            function handleMove(direction) {
+                let moved = false;
+                for (let i = 0; i < direction; i++) rotateBoard();
+                moved = moveLeft();
+                const rem = direction === 0 ? 0 : 4 - direction;
+                for (let i = 0; i < rem; i++) rotateBoard();
+
+                if (moved) {
+                    generateTile();
+                    renderBoard();
+                    checkGameOver();
+                }
+            }
+
+            window.addEventListener('keydown', (e) => {
+                if (['ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown', 'w', 'a', 's', 'd'].includes(e.key)) {
+                    e.preventDefault();
+                }
+                if (e.key === 'ArrowLeft' || e.key === 'a') handleMove(0);
+                else if (e.key === 'ArrowUp' || e.key === 'w') handleMove(1);
+                else if (e.key === 'ArrowRight' || e.key === 'd') handleMove(2);
+                else if (e.key === 'ArrowDown' || e.key === 's') handleMove(3);
+            });
+
+            function checkGameOver() {
+                const totalZeros = board.filter(v => v === 0).length;
+                if (totalZeros > 0) {
+                    gameOverScreen.classList.add('hidden');
+                    return;
+                }
+                for (let i = 0; i < 16; i++) {
+                    if (i % 4 < 3 && board[i] === board[i + 1]) return;
+                    if (i < 12 && board[i] === board[i + 4]) return;
+                }
+                gameOverScreen.classList.remove('hidden');
+            }
+
+            restartBtn.addEventListener('click', startGame);
+            retryBtn.addEventListener('click', startGame);
+
+            startGame();
+        });
+    </script>
+</body>
+</html>
