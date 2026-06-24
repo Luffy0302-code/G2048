@@ -290,7 +290,17 @@
             border-radius: 3px;
             width: 70px;
             height: 70px;
-            position: relative;
+        }
+
+        /* Absolute layer wrapper for smooth sliding calculations */
+        .tile-container {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 320px;
+            height: 320px;
+            z-index: 5;
+            pointer-events: none;
         }
 
         .tile {
@@ -298,14 +308,19 @@
             height: 70px;
             border-radius: 3px;
             position: absolute;
-            top: 0;
-            left: 0;
             display: flex;
             justify-content: center;
             align-items: center;
             font-size: 28px;
             font-weight: bold;
-            animation: appear 0.2s ease-in-out;
+            /* Smooth sliding handling */
+            transition: transform 0.12s ease-in-out; 
+            animation: appear 0.15s ease-in-out;
+        }
+
+        /* Scale animation trigger when two tiles merge */
+        .tile-merged {
+            animation: pop 0.18s ease-in-out;
         }
 
         .tile-2 { background: #eee4da; color: #776e65; }
@@ -349,6 +364,12 @@
         @keyframes appear {
             0% { opacity: 0; transform: scale(0); }
             100% { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
         }
     </style>
 </head>
@@ -410,6 +431,8 @@
                 <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
                 <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
                 <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
+                
+                <div class="tile-container" id="tile-container"></div>
             </div>
         </div>
     </main>
@@ -440,29 +463,29 @@
                 themeToggle.textContent = document.body.classList.contains('dark-theme') ? '☀️ Light' : '🌙 Dark';
             });
 
-            // --- 2048 Core Engine ---
+            // --- 2048 Core Shifting Animation Engine ---
             const scoreDisplay = document.getElementById('score');
             const restartBtn = document.getElementById('restart-btn');
             const retryBtn = document.getElementById('retry-btn');
             const gameOverScreen = document.getElementById('game-over');
-            const cells = document.querySelectorAll('.grid-cell');
+            const tileContainer = document.getElementById('tile-container');
             
             let board = Array(16).fill(0);
             let score = 0;
+
+            // Tracking object references helps preserve slide paths instead of wiping elements instantly
+            let visualTiles = Array(16).fill(null);
 
             function startGame() {
                 gameOverScreen.classList.add('hidden');
                 board = Array(16).fill(0);
                 score = 0;
                 updateScore(0);
-                clearBoard();
+                tileContainer.innerHTML = '';
+                visualTiles = Array(16).fill(null);
                 generateTile();
                 generateTile();
                 renderBoard();
-            }
-
-            function clearBoard() {
-                document.querySelectorAll('.tile').forEach(tile => tile.remove());
             }
 
             function generateTile() {
@@ -472,110 +495,5 @@
                 board[randomCell] = Math.random() < 0.9 ? 2 : 4;
             }
 
-            function renderBoard() {
-                clearBoard();
-                board.forEach((value, index) => {
-                    if (value > 0) {
-                        const tile = document.createElement('div');
-                        tile.className = `tile tile-${value}`;
-                        tile.innerText = value;
-                        cells[index].appendChild(tile);
-                    }
-                });
-            }
-
-            function updateScore(amount) {
-                score += amount;
-                scoreDisplay.innerText = score;
-            }
-
-            function slideRow(row) {
-                let arr = row.filter(val => val);
-                let missing = 4 - arr.length;
-                return arr.concat(Array(missing).fill(0));
-            }
-
-            function combineRow(row) {
-                for (let i = 0; i < 3; i++) {
-                    if (row[i] === row[i + 1] && row[i] !== 0) {
-                        row[i] *= 2;
-                        updateScore(row[i]);
-                        row[i + 1] = 0;
-                    }
-                }
-                return row;
-            }
-
-            function moveLeft() {
-                let moved = false;
-                for (let i = 0; i < 16; i += 4) {
-                    let row = [board[i], board[i+1], board[i+2], board[i+3]];
-                    let slid = slideRow(row);
-                    let combined = combineRow(slid);
-                    let finalRow = slideRow(combined);
-                    
-                    if (JSON.stringify(row) !== JSON.stringify(finalRow)) moved = true;
-
-                    for (let j = 0; j < 4; j++) {
-                        board[i + j] = finalRow[j];
-                    }
-                }
-                return moved;
-            }
-
-            function rotateBoard() {
-                let newBoard = Array(16).fill(0);
-                for (let r = 0; r < 4; r++) {
-                    for (let c = 0; c < 4; c++) {
-                        newBoard[c * 4 + (3 - r)] = board[r * 4 + c];
-                    }
-                }
-                board = newBoard;
-            }
-
-            function handleMove(direction) {
-                let moved = false;
-                for (let i = 0; i < direction; i++) rotateBoard();
-                moved = moveLeft();
-                const rem = direction === 0 ? 0 : 4 - direction;
-                for (let i = 0; i < rem; i++) rotateBoard();
-
-                if (moved) {
-                    generateTile();
-                    renderBoard();
-                    checkGameOver();
-                }
-            }
-
-            window.addEventListener('keydown', (e) => {
-                if (['ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown', 'w', 'a', 's', 'd'].includes(e.key)) {
-                    e.preventDefault(); // Prevents layout window bouncing
-                }
-                if (e.key === 'ArrowLeft' || e.key === 'a') handleMove(0);
-                else if (e.key === 'ArrowUp' || e.key === 'w') handleMove(1);
-                else if (e.key === 'ArrowRight' || e.key === 'd') handleMove(2);
-                else if (e.key === 'ArrowDown' || e.key === 's') handleMove(3);
-            });
-
-            function checkGameOver() {
-                // Safely checks if board spaces are truly zero filled first
-                const totalZeros = board.filter(v => v === 0).length;
-                if (totalZeros > 0) {
-                    gameOverScreen.classList.add('hidden');
-                    return;
-                }
-                for (let i = 0; i < 16; i++) {
-                    if (i % 4 < 3 && board[i] === board[i + 1]) return;
-                    if (i < 12 && board[i] === board[i + 4]) return;
-                }
-                gameOverScreen.classList.remove('hidden');
-            }
-
-            restartBtn.addEventListener('click', startGame);
-            retryBtn.addEventListener('click', startGame);
-
-            startGame();
-        });
-    </script>
-</body>
-</html>
+            // Math to translate board indexes into neat absolute pixels
+            function getTilePosition
