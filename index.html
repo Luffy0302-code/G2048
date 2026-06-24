@@ -48,7 +48,7 @@
             padding: 0 20px;
             height: 60px;
             position: relative;
-            z-index: 10; 
+            z-index: 100; 
         }
 
         .logo {
@@ -59,7 +59,6 @@
             text-decoration: none;
         }
 
-        /* Navigation Links */
         .nav-links {
             display: flex;
             list-style: none;
@@ -104,7 +103,7 @@
             margin-right: 15px; 
             cursor: pointer;
             position: relative;
-            z-index: 40; 
+            z-index: 140; 
         }
 
         .nine-dot-button span {
@@ -113,10 +112,6 @@
             background-color: var(--navbar-text);
             border-radius: 50%;
             display: inline-block;
-        }
-
-        .nine-dot-button.active span {
-            background-color: #ffffff;
         }
 
         /* Sidebar Menu */
@@ -129,7 +124,7 @@
             background-color: var(--sidebar-bg);
             box-shadow: 4px 0px 16px rgba(0,0,0,0.3);
             padding-top: 80px; 
-            z-index: 30; 
+            z-index: 130; 
             transform: translateX(-100%);
             transition: transform 0.4s ease; 
         }
@@ -170,8 +165,7 @@
             height: 100vh;
             background-color: rgba(0, 0, 0, 0.2); 
             backdrop-filter: blur(8px); 
-            -webkit-backdrop-filter: blur(8px); 
-            z-index: 20; 
+            z-index: 120; 
             opacity: 0;
             pointer-events: none; 
             transition: opacity 0.4s ease;
@@ -292,7 +286,7 @@
             height: 70px;
         }
 
-        /* Absolute overlay area across grid dimensions */
+        /* Dynamic tile overlay layer positioned precisely at the upper corner bounds */
         .tile-container {
             position: absolute;
             top: 10px;
@@ -308,14 +302,21 @@
             height: 70px;
             border-radius: 3px;
             position: absolute;
+            top: 0;
+            left: 0;
             display: flex;
             justify-content: center;
             align-items: center;
             font-size: 28px;
             font-weight: bold;
-            /* Precise slide handling */
-            transition: transform 0.1s ease-in-out; 
-            animation: appear 0.12s ease-in-out;
+            
+            /* Premium glide feel using a custom cubic-bezier acceleration curve */
+            transition: transform 140ms cubic-bezier(0.25, 1, 0.5, 1); 
+            animation: appear 120ms ease-in-out;
+        }
+
+        .tile-pop {
+            animation: pop 140ms ease-in-out;
         }
 
         .tile-2 { background: #eee4da; color: #776e65; }
@@ -359,6 +360,12 @@
         @keyframes appear {
             0% { opacity: 0; transform: scale(0.5); }
             100% { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
         }
     </style>
 </head>
@@ -436,14 +443,12 @@
 
             menuBtn.addEventListener('click', (e) => {
                 sideMenu.classList.toggle('open');
-                menuBtn.classList.toggle('active');
                 menuOverlay.classList.toggle('show');
                 e.stopPropagation();
             });
 
             menuOverlay.addEventListener('click', () => {
                 sideMenu.classList.remove('open');
-                menuBtn.classList.remove('active');
                 menuOverlay.classList.remove('show');
             });
 
@@ -452,7 +457,7 @@
                 themeToggle.textContent = document.body.classList.contains('dark-theme') ? '☀️ Light' : '🌙 Dark';
             });
 
-            // --- 2048 Stable Engine ---
+            // --- 2048 Gliding Engine ---
             const scoreDisplay = document.getElementById('score');
             const restartBtn = document.getElementById('restart-btn');
             const retryBtn = document.getElementById('retry-btn');
@@ -461,12 +466,18 @@
             
             let board = Array(16).fill(0);
             let score = 0;
+            
+            // Unique key ids attached to elements ensure they track seamlessly during transitions
+            let tileIdCounter = 0;
+            let currentTilesMap = {}; 
 
             function startGame() {
                 gameOverScreen.classList.add('hidden');
                 board = Array(16).fill(0);
                 score = 0;
-                updateScore(0);
+                scoreDisplay.innerText = 0;
+                tileContainer.innerHTML = '';
+                currentTilesMap = {};
                 generateTile();
                 generateTile();
                 renderBoard();
@@ -476,87 +487,95 @@
                 const emptyCells = board.map((val, idx) => val === 0 ? idx : null).filter(val => val !== null);
                 if (emptyCells.length === 0) return;
                 const randomCell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
-                board[randomCell] = Math.random() < 0.9 ? 2 : 4;
+                const val = Math.random() < 0.9 ? 2 : 4;
+                
+                board[randomCell] = {
+                    id: tileIdCounter++,
+                    value: val,
+                    merged: false
+                };
             }
 
             function getTilePosition(index) {
                 const row = Math.floor(index / 4);
                 const col = index % 4;
-                const sizeWithGap = 70 + 10; // 70px tile + 10px spacing
-                return { x: col * sizeWithGap, y: row * sizeWithGap };
+                const gap = 10;
+                const cellSize = 70;
+                return {
+                    x: col * (cellSize + gap),
+                    y: row * (cellSize + gap)
+                };
             }
 
             function renderBoard() {
-                // Fetch elements currently existing in the container layer
-                const currentTiles = Array.from(tileContainer.children);
-                
-                // Track assignments to avoid double binding elements
-                const usedTiles = new Set();
+                const updatedTilesMap = {};
 
-                board.forEach((value, index) => {
-                    if (value === 0) return;
+                board.forEach((tileData, index) => {
+                    if (!tileData) return;
+
                     const pos = getTilePosition(index);
+                    let tileEl = currentTilesMap[tileData.id];
 
-                    // Match an existing HTML block by numerical value to apply the transform transition smoothly
-                    let tileEl = currentTiles.find(el => el.dataset.val == value && !usedTiles.has(el));
-
-                    if (tileEl) {
-                        usedTiles.add(tileEl);
-                    } else {
-                        // Create asset dynamically if none match perfectly
+                    if (!tileEl) {
+                        // Spawn new item if it doesn't exist
                         tileEl = document.createElement('div');
-                        tileEl.innerText = value;
-                        tileEl.dataset.val = value;
+                        tileEl.innerText = tileData.value;
                         tileContainer.appendChild(tileEl);
                     }
 
-                    // Strict presentation updates applied instantly on data cycles
-                    tileEl.className = `tile tile-${value}`;
+                    // Strict layout alignment reset
+                    tileEl.className = `tile tile-${tileData.value}`;
                     tileEl.style.transform = `translate(${pos.x}px, ${pos.y}px)`;
-                });
-
-                // Clear missing elements out of DOM structure safely
-                currentTiles.forEach(el => {
-                    if (!usedTiles.has(el)) {
-                        el.remove();
+                    
+                    if (tileData.merged) {
+                        tileEl.classList.add('tile-pop');
+                        tileEl.innerText = tileData.value;
                     }
+
+                    updatedTilesMap[tileData.id] = tileEl;
                 });
-            }
 
-            function updateScore(amount) {
-                score += amount;
-                scoreDisplay.innerText = score;
-            }
-
-            function slideRow(row) {
-                let arr = row.filter(val => val);
-                let missing = 4 - arr.length;
-                return arr.concat(Array(missing).fill(0));
-            }
-
-            function combineRow(row) {
-                for (let i = 0; i < 3; i++) {
-                    if (row[i] === row[i + 1] && row[i] !== 0) {
-                        row[i] *= 2;
-                        updateScore(row[i]);
-                        row[i + 1] = 0;
+                // Clear outdated elements after glide transitions complete
+                for (const id in currentTilesMap) {
+                    if (!updatedTilesMap[id]) {
+                        currentTilesMap[id].remove();
                     }
                 }
-                return row;
+
+                currentTilesMap = updatedTilesMap;
             }
 
             function moveLeft() {
                 let moved = false;
                 for (let i = 0; i < 16; i += 4) {
                     let row = [board[i], board[i+1], board[i+2], board[i+3]];
-                    let slid = slideRow(row);
-                    let combined = combineRow(slid);
-                    let finalRow = slideRow(combined);
                     
-                    if (JSON.stringify(row) !== JSON.stringify(finalRow)) moved = true;
+                    // Filter out empty items
+                    let filteredRow = row.filter(val => val);
+                    
+                    // Process merge arithmetic
+                    for (let j = 0; j < filteredRow.length - 1; j++) {
+                        if (filteredRow[j].value === filteredRow[j+1].value) {
+                            filteredRow[j].value *= 2;
+                            score += filteredRow[j].value;
+                            filteredRow[j].merged = true;
+                            // Remove merged trailing item
+                            filteredRow.splice(j + 1, 1); 
+                            moved = true;
+                        }
+                    }
 
+                    // Fill row back out to length 4
+                    while (filteredRow.length < 4) {
+                        filteredRow.push(0);
+                    }
+
+                    // Save row back to board state
                     for (let j = 0; j < 4; j++) {
-                        board[i + j] = finalRow[j];
+                        if (JSON.stringify(board[i + j]) !== JSON.stringify(filteredRow[j])) {
+                            moved = true;
+                        }
+                        board[i + j] = filteredRow[j];
                     }
                 }
                 return moved;
@@ -574,12 +593,17 @@
 
             function handleMove(direction) {
                 let moved = false;
+                
+                // Clear out temporary pop triggers before initializing movement
+                board.forEach(tile => { if(tile) tile.merged = false; });
+
                 for (let i = 0; i < direction; i++) rotateBoard();
                 moved = moveLeft();
                 const rem = direction === 0 ? 0 : 4 - direction;
                 for (let i = 0; i < rem; i++) rotateBoard();
 
                 if (moved) {
+                    scoreDisplay.innerText = score;
                     generateTile();
                     renderBoard();
                     checkGameOver();
@@ -597,14 +621,13 @@
             });
 
             function checkGameOver() {
-                const totalZeros = board.filter(v => v === 0).length;
-                if (totalZeros > 0) {
-                    gameOverScreen.classList.add('hidden');
-                    return;
-                }
+                const hasEmptyCells = board.some(cell => cell === 0);
+                if (hasEmptyCells) return;
+
+                // Check matches horizontally/vertically
                 for (let i = 0; i < 16; i++) {
-                    if (i % 4 < 3 && board[i] === board[i + 1]) return;
-                    if (i < 12 && board[i] === board[i + 4]) return;
+                    if (i % 4 < 3 && board[i].value === board[i + 1].value) return;
+                    if (i < 12 && board[i].value === board[i + 4].value) return;
                 }
                 gameOverScreen.classList.remove('hidden');
             }
