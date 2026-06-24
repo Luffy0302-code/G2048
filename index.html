@@ -49,16 +49,7 @@
             Manual
         </a>
 
-        Building a 2048 clone to embed into your website is a fantastic project. It requires three core files: HTML for the structure, CSS for the styling and animations, and JavaScript for the game logic (handling grid movements, combining tiles, and tracking the score).Here is a complete, clean, and responsive version you can drop right into your website as an add-on.1. The HTML (Structure)Create a file named index.html (or paste this section into your existing page's body). It sets up the game container, the score display, and the $4 \times 4$ grid.HTML<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2048 Game Add-on</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-
+       
     <div class="game-container">
         <div class="game-header">
             <div class="title">2048</div>
@@ -95,7 +86,7 @@
         </div>
     </div>
     </main>
-
+    <script src="script.js"></script>
     <script>
         // --- Sidebar & Blur Overlay Logic ---
         const menuBtn = document.getElementById('menuBtn');
