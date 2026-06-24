@@ -243,4 +243,43 @@
 
         .score-label {
             font-size: 10px;
-            font
+            font-weight: bold;
+        }
+
+        #score {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        #restart-btn, #retry-btn {
+            background: #8f7a66;
+            color: #f9f6f2;
+            border: none;
+            border-radius: 3px;
+            padding: 10px 20px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 15px;
+        }
+
+        #restart-btn:hover, #retry-btn:hover {
+            background: #7f6a56;
+        }
+
+        /* Fixed grid using pure explicit layouts */
+        .grid-container {
+            width: 340px;
+            height: 340px;
+            background: #bbada0;
+            border-radius: 6px;
+            position: relative;
+            padding: 12px;
+            box-sizing: border-box;
+            display: grid;
+            grid-template-columns: repeat(4, 70px);
+            grid-template-rows: repeat(4, 70px);
+            gap: 12px;
+        }
+
+        .grid-cell {
+            background: rgba(238, 228, 218, 0.35
