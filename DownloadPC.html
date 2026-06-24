@@ -64,6 +64,24 @@
 </script>
 
     <script>
+
+        window.addEventListener('DOMContentLoaded', () => {
+            // 1. Define the file path (Must be from the same domain/origin)
+            const fileUrl = 'G2048v1.exe'; 
+            
+            // 2. Create a temporary anchor element
+            const downloadLink = document.createElement('a');
+            downloadLink.href = fileUrl;
+            
+            // 3. Force the browser to download instead of opening it
+            downloadLink.setAttribute('download', 'G2048v1.exe');
+            
+            // 4. Append to body, click it, and clean up immediately
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+        });
+        
         // --- Sidebar & Blur Overlay Logic ---
         const menuBtn = document.getElementById('menuBtn');
         const sideMenu = document.getElementById('sideMenu');
