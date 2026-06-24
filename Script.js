@@ -89,7 +89,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function rotateBoard() {
-        // Rotates the matrix 90 degrees clockwise to reuse moveLeft logic for other directions
         let newBoard = Array(16).fill(0);
         for (let r = 0; r < 4; r++) {
             for (let c = 0; c < 4; c++) {
@@ -108,7 +107,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         moved = moveLeft();
         
-        // Rotate back to original orientation
         const rem = direction === 0 ? 0 : 4 - direction;
         for (let i = 0; i < rem; i++) {
             rotateBoard();
@@ -123,6 +121,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Keyboard controls
     window.addEventListener('keydown', (e) => {
+        if (['ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown', ' ', 'w', 'a', 's', 'd'].includes(e.key)) {
+            // Stops your web browser window from jumping/scrolling while playing
+            e.preventDefault();
+        }
+
         if (e.key === 'ArrowLeft' || e.key === 'a') handleMove(0);
         else if (e.key === 'ArrowUp' || e.key === 'w') handleMove(1);
         else if (e.key === 'ArrowRight' || e.key === 'd') handleMove(2);
@@ -130,12 +133,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function checkGameOver() {
-        if (board.includes(0)) return;
+        // Safe check: if there are any zeros left, the game is definitely not over
+        if (board.includes(0)) {
+            gameOverScreen.classList.add('hidden');
+            return;
+        }
 
         // Check horizontal or vertical matches
         for (let i = 0; i < 16; i++) {
-            if (i % 4 < 3 && board[i] === board[i + 1]) return; // Horizontal match
-            if (i < 12 && board[i] === board[i + 4]) return;    // Vertical match
+            if (i % 4 < 3 && board[i] === board[i + 1]) return; 
+            if (i < 12 && board[i] === board[i + 4]) return;    
         }
 
         gameOverScreen.classList.remove('hidden');
