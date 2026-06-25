@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="google-adsense-account" content="ca-pub-5950143735611835">
+    <title>Download for PC</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* --- CSS Variables --- */
+       
+    </style>
+</head>
+<body>
+
+    <div class="menu-overlay" id="menuOverlay"></div>
+
+    <div class="dropdown-content" id="sideMenu">
+        <a href="G2048v1.exe" download="G2048"  class="download-btn">Download for PC</a>
+        <a href="#">Dark Chocolate</a>
+        <a href="#">Milk Chocolate</a>
+        <a href="#">White Chocolate</a>
+        <a href="#">Truffles & Bonbons</a>
+    </div>
+
+    <nav class="navbar">
+        <div class="nine-dot-button" id="menuBtn">
+            <span></span><span></span><span></span>
+            <span></span><span></span><span></span>
+            <span></span><span></span><span></span>
+        </div>
+
+        <a href="index.html" class="logo">G2048</a>
+        
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="#">About Us</a></li>
+            <li><a href="#">Contact</a></li>
+        </ul>
+
+        <button class="theme-toggle-btn" id="themeToggle">🌙 Dark</button>
+    </nav>
+
+    <main class="content">
+        <h1>Your download should begin now.</h1>
+        <p>Easy. Simple game.</p>
+        
+        <a href="G2048v1.exe"  download="G2048.exe" class="main-download-btn">
+            Download for PC
+        </a>
+    </main>
+
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5950143735611835"
+     crossorigin="anonymous"></script>
+<!-- AdSense1 -->
+<ins class="adsbygoogle"
+     style="display:block"
+     data-ad-client="ca-pub-5950143735611835"
+     data-ad-slot="4109228405"
+     data-ad-format="auto"
+     data-full-width-responsive="true"></ins>
+<script>
+     (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+
+    <script>
+
+        window.addEventListener('DOMContentLoaded', () => {
+            // 1. Define the file path (Must be from the same domain/origin)
+            const fileUrl = 'G2048v1.exe'; 
+            
+            // 2. Create a temporary anchor element
+            const downloadLink = document.createElement('a');
+            downloadLink.href = fileUrl;
+            
+            // 3. Force the browser to download instead of opening it
+            downloadLink.setAttribute('download', 'G2048v1.exe');
+            
+            // 4. Append to body, click it, and clean up immediately
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+        });
+        
+        // --- Sidebar & Blur Overlay Logic ---
+        const menuBtn = document.getElementById('menuBtn');
+        const sideMenu = document.getElementById('sideMenu');
+        const menuOverlay = document.getElementById('menuOverlay');
+
+        function toggleMenu() {
+            sideMenu.classList.toggle('open');
+            menuBtn.classList.toggle('active');
+            menuOverlay.classList.toggle('show');
+        }
+
+        function closeMenu() {
+            sideMenu.classList.remove('open');
+            menuBtn.classList.remove('active');
+            menuOverlay.classList.remove('show');
+        }
+
+        menuBtn.addEventListener('click', (event) => {
+            toggleMenu();
+            event.stopPropagation();
+        });
+
+        menuOverlay.addEventListener('click', closeMenu);
+
+        // --- Dark Mode Logic ---
+        const themeToggle = document.getElementById('themeToggle');
+        
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-theme');
+            if (document.body.classList.contains('dark-theme')) {
+                themeToggle.textContent = 'Light';
+            } else {
+                themeToggle.textContent = 'Dark';
+            }
+        });
+    </script>
+
+</body>
+</html>
