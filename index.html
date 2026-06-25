@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>G2048</title>
     <style>
         :root {
@@ -38,6 +38,8 @@
         body {
             background-color: var(--bg-color);
             overflow-x: hidden; 
+            /* Prevents pull-to-refresh and accidental scrolling bounces on mobile browsers */
+            touch-action: manipulation;
         }
 
         /* Top Navigation Bar */
@@ -105,7 +107,6 @@
             position: relative;
             z-index: 140; 
         }
-        
 
         .nine-dot-button span {
             width: 4px;
@@ -179,19 +180,19 @@
 
         /* Content Container */
         .content {
-            padding: 40px 20px;
+            padding: 20px 10px;
             text-align: center;
             color: var(--text-color);
         }
 
         .content h1 {
-            font-size: 36px;
-            margin-bottom: 15px;
+            font-size: 28px;
+            margin-bottom: 5px;
         }
 
         .content p {
-            font-size: 18px;
-            margin-bottom: 30px;
+            font-size: 16px;
+            margin-bottom: 15px;
         }
 
         .main-download-btn {
@@ -199,13 +200,13 @@
             background-color: var(--main-btn-bg);
             color: var(--main-btn-text);
             text-decoration: none;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: bold;
-            padding: 14px 28px;
+            padding: 10px 20px;
             border-radius: 30px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.15);
             transition: transform 0.2s, background-color 0.3s;
-            margin: 0 10px 30px 10px;
+            margin: 0 5px 20px 5px;
         }
 
         .main-download-btn:hover {
@@ -215,10 +216,12 @@
 
         /* --- 2048 Game Styling Area --- */
         .game-container {
-            width: 340px;
-            margin: 20px auto;
+            width: 100%;
+            max-width: 340px;
+            margin: 10px auto;
             position: relative;
             text-align: left;
+            padding: 0 10px;
         }
 
         .game-header {
@@ -229,7 +232,7 @@
         }
 
         .title {
-            font-size: 48px;
+            font-size: 36px;
             font-weight: bold;
             color: #776e65;
         }
@@ -240,6 +243,7 @@
             border-radius: 3px;
             text-align: center;
             color: white;
+            min-width: 80px;
         }
 
         .score-label {
@@ -248,7 +252,7 @@
         }
 
         #score {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: bold;
         }
 
@@ -261,58 +265,71 @@
             font-weight: bold;
             cursor: pointer;
             margin-bottom: 15px;
+            font-size: 14px;
         }
 
         #restart-btn:hover, #retry-btn:hover {
             background: #7f6a56;
         }
 
+        /* Aspect ratio container ensures layout fluidly scales on tiny devices */
+        .grid-wrapper {
+            position: relative;
+            width: 100%;
+            padding-bottom: 100%; /* Perfect square constraint */
+        }
+
         .grid-container {
-            width: 340px;
-            height: 340px;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             background: #bbada0;
             border-radius: 6px;
-            position: relative;
-            padding: 12px;
-            box-sizing: border-box;
+            padding: 3.5%;
             display: grid;
-            grid-template-columns: repeat(4, 70px);
-            grid-template-rows: repeat(4, 70px);
-            gap: 12px;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: 3.5%;
         }
 
         .grid-cell {
             background: rgba(238, 228, 218, 0.35);
             border-radius: 4px;
-            width: 70px;
-            height: 70px;
+            width: 100%;
+            height: 100%;
         }
 
         .tile-container {
             position: absolute;
-            top: 12px;
-            left: 12px;
-            width: 316px;
-            height: 316px;
+            top: 3.5%;
+            left: 3.5%;
+            width: 93%;
+            height: 93%;
             z-index: 5;
             pointer-events: none;
         }
 
         .tile {
-            width: 70px;
-            height: 70px;
+            /* Width and height are handled fluidly by JS matrix multipliers */
             border-radius: 4px;
             position: absolute;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 28px;
+            font-size: 7vw; /* Dynamic text size scaling */
             font-weight: bold;
             
-            /* Slower smooth glide configuration */
             transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
             animation: appear 160ms ease-in-out;
             will-change: transform;
+        }
+
+        /* Keep text readable on full desktop layouts */
+        @media (min-width: 340px) {
+            .tile { font-size: 24px; }
+            .tile-2, .tile-4, .tile-8, .tile-16, .tile-32, .tile-64 { font-size: 28px; }
         }
 
         .tile-pop {
@@ -325,11 +342,16 @@
         .tile-16 { background: #f59563; color: #f9f6f2; }
         .tile-32 { background: #f67c5f; color: #f9f6f2; }
         .tile-64 { background: #f65e3b; color: #f9f6f2; }
-        .tile-128 { background: #edcf72; color: #f9f6f2; font-size: 24px; }
-        .tile-256 { background: #edcc61; color: #f9f6f2; font-size: 24px; }
-        .tile-512 { background: #edc850; color: #f9f6f2; font-size: 24px; }
-        .tile-1024 { background: #edc53f; color: #f9f6f2; font-size: 20px; }
-        .tile-2048 { background: #edc22e; color: #f9f6f2; font-size: 20px; }
+        .tile-128 { background: #edcf72; color: #f9f6f2; font-size: 6vw; }
+        .tile-256 { background: #edcc61; color: #f9f6f2; font-size: 6vw; }
+        .tile-512 { background: #edc850; color: #f9f6f2; font-size: 6vw; }
+        .tile-1024 { background: #edc53f; color: #f9f6f2; font-size: 5vw; }
+        .tile-2048 { background: #edc22e; color: #f9f6f2; font-size: 5vw; }
+
+        @media (min-width: 340px) {
+            .tile-128, .tile-256, .tile-512 { font-size: 24px; }
+            .tile-1024, .tile-2048 { font-size: 20px; }
+        }
 
         #game-over {
             position: absolute;
@@ -351,10 +373,15 @@
         }
 
         #game-over p {
-            font-size: 40px;
+            font-size: 32px;
             font-weight: bold;
             color: #776e65;
             margin-bottom: 20px;
+        }
+
+        /* Mobile specific adjustments to hide desktop links inside core navbar if space is tight */
+        @media (max-width: 480px) {
+            .nav-links { display: none; }
         }
 
         @keyframes appear {
@@ -417,23 +444,25 @@
             
             <button id="restart-btn">New Game</button>
 
-            <div id="game-over" class="hidden">
-                <p>Game Over!</p>
-                <button id="retry-btn">Try Again</button>
-            </div>
+            <div class="grid-wrapper">
+                <div id="game-over" class="hidden">
+                    <p>Game Over!</p>
+                    <button id="retry-btn">Try Again</button>
+                </div>
 
-            <div class="grid-container">
-                <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
-                <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
-                <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
-                <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
-                
-                <div class="tile-container" id="tile-container"></div>
+                <div class="grid-container">
+                    <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
+                    <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
+                    <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
+                    <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
+                    
+                    <div class="tile-container" id="tile-container"></div>
+                </div>
             </div>
         </div>
     </main>
 
-  <script>
+    <script>
         document.addEventListener('DOMContentLoaded', () => {
             // --- UI Elements ---
             const menuBtn = document.getElementById('menuBtn');
@@ -463,9 +492,6 @@
             const retryBtn = document.getElementById('retry-btn');
             const gameOverScreen = document.getElementById('game-over');
             const tileContainer = document.getElementById('tile-container');
-            
-            const CELL_SIZE = 70;
-            const GAP = 12;
 
             let board = Array(16).fill(0);
             let score = 0;
@@ -473,12 +499,14 @@
             let currentTilesMap = {}; 
             let isMoving = false;
 
-            function getTilePosition(index) {
+            // Calculates percentages instead of strict pixel heights for fluid responsiveness
+            function getTilePositionPercent(index) {
                 const row = Math.floor(index / 4);
                 const col = index % 4;
+                // Matches grid alignment ratios (25% blocks with 3.5% gap variables)
                 return {
-                    x: col * (CELL_SIZE + GAP),
-                    y: row * (CELL_SIZE + GAP)
+                    x: col * 26.85,
+                    y: row * 26.85
                 };
             }
 
@@ -514,18 +542,20 @@
                 board.forEach((tileData, index) => {
                     if (!tileData) return;
 
-                    const pos = getTilePosition(index);
+                    const pos = getTilePositionPercent(index);
                     let tileEl = currentTilesMap[tileData.id];
 
                     if (!tileEl) {
                         tileEl = document.createElement('div');
                         tileEl.innerText = tileData.value;
                         tileEl.className = `tile tile-${tileData.value}`;
-                        tileEl.style.transform = `translate(${pos.x}px, ${pos.y}px)`;
+                        tileEl.style.width = '22.8%';
+                        tileEl.style.height = '22.8%';
+                        tileEl.style.transform = `translate(${pos.x}%, ${pos.y}%)`;
                         tileContainer.appendChild(tileEl);
                     } else {
                         tileEl.className = `tile tile-${tileData.value}`;
-                        tileEl.style.transform = `translate(${pos.x}px, ${pos.y}px)`;
+                        tileEl.style.transform = `translate(${pos.x}%, ${pos.y}%)`;
                     }
                     
                     if (tileData.merged) {
@@ -548,26 +578,21 @@
                 currentTilesMap = updatedTilesMap;
             }
 
-            // Slide and merge a single line of 4 elements
             function slideLine(line, getBoardIndexFunc) {
                 let moved = false;
-                // Filter out empty spaces
                 let filtered = line.filter(val => val);
 
-                // Handle merges
                 for (let i = 0; i < filtered.length - 1; i++) {
-                    if (filtered[i].value === filtered[filtered.length - 1 - i]?.value) { /* safety catch */ }
                     if (filtered[i] && filtered[i+1] && filtered[i].value === filtered[i+1].value) {
                         filtered[i].value *= 2;
                         score += filtered[i].value;
                         filtered[i].merged = true;
 
-                        // Animate disappearing tile straight to its target index anchor
                         const disappearingTileId = filtered[i+1].id;
                         if (currentTilesMap[disappearingTileId]) {
                             const targetIdx = getBoardIndexFunc(i);
-                            const targetPos = getTilePosition(targetIdx);
-                            currentTilesMap[disappearingTileId].style.transform = `translate(${targetPos.x}px, ${targetPos.y}px)`;
+                            const targetPos = getTilePositionPercent(targetIdx);
+                            currentTilesMap[disappearingTileId].style.transform = `translate(${targetPos.x}%, ${targetPos.y}%)`;
                         }
 
                         filtered.splice(i + 1, 1);
@@ -575,7 +600,6 @@
                     }
                 }
 
-                // Fill remaining spaces with 0
                 while (filtered.length < 4) {
                     filtered.push(0);
                 }
@@ -587,15 +611,11 @@
                 if (isMoving) return;
                 isMoving = true;
 
-                // Clear older merge states
                 board.forEach(tile => { if (tile) tile.merged = false; });
-
                 let totalMoved = false;
 
-                // Directions: 0 = Left, 1 = Up, 2 = Right, 3 = Down
                 for (let i = 0; i < 4; i++) {
                     let line = [];
-                    // Function to map line sequence back to real flat 1D board index
                     let getBoardIndex = (j) => 0;
 
                     if (direction === 0) { // LEFT
@@ -614,7 +634,6 @@
 
                     const result = slideLine(line, getBoardIndex);
                     
-                    // Write the computed results straight back to the master board
                     for (let j = 0; j < 4; j++) {
                         const targetIdx = getBoardIndex(j);
                         if (JSON.stringify(board[targetIdx]) !== JSON.stringify(result.filtered[j])) {
@@ -639,6 +658,7 @@
                 }
             }
 
+            // --- Desktop Key Listeners ---
             window.addEventListener('keydown', (e) => {
                 if (['ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown', 'w', 'a', 's', 'd'].includes(e.key)) {
                     e.preventDefault();
@@ -648,6 +668,39 @@
                 else if (e.key === 'ArrowRight' || e.key === 'd') handleMove(2);
                 else if (e.key === 'ArrowDown' || e.key === 's') handleMove(3);
             });
+
+            // --- Mobile Touch Gesture Handlers ---
+            let touchStartX = 0;
+            let touchStartY = 0;
+
+            window.addEventListener('touchstart', (e) => {
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+            }, { passive: true });
+
+            window.addEventListener('touchend', (e) => {
+                if (!touchStartX || !touchStartY) return;
+
+                let touchEndX = e.changedTouches[0].clientX;
+                let touchEndY = e.changedTouches[0].clientY;
+
+                let dx = touchEndX - touchStartX;
+                let dy = touchEndY - touchStartY;
+
+                // Threshold prevents accidental micro-swipes from triggering actions
+                if (Math.abs(dx) > 40 || Math.abs(dy) > 40) {
+                    if (Math.abs(dx) > Math.abs(dy)) {
+                        if (dx > 0) handleMove(2); // Swipe Right
+                        else handleMove(0);        // Swipe Left
+                    } else {
+                        if (dy > 0) handleMove(3); // Swipe Down
+                        else handleMove(1);        // Swipe Up
+                    }
+                }
+                
+                touchStartX = 0;
+                touchStartY = 0;
+            }, { passive: true });
 
             function checkGameOver() {
                 const hasEmptyCells = board.some(cell => cell === 0);
