@@ -382,6 +382,21 @@
     50% { transform: scale(1.15); }
     100% { transform: scale(1); }
 }
+
+        .close-btn {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    font-size: 30px;
+    font-weight: bold;
+    color: #fff; /* Change color based on your theme */
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.close-btn:hover {
+    color: #ff4d4d; /* Changes color to red on hover */
+}
     </style>
 </head>
 <body>
@@ -389,7 +404,7 @@
     <div class="menu-overlay" id="menuOverlay"></div>
 
     <div class="dropdown-content" id="sideMenu">
-        
+        <span class="close-btn" id="closeSidebar">&times;</span>
         <a href="DownloadPC.html" class="download-btn">Download for PC</a>
         <a href="#">Dark Chocolate</a>
         <a href="#">Milk Chocolate</a>
